@@ -6,6 +6,7 @@ import (
 	. "github.com/chefsgo/base"
 	"github.com/chefsgo/chef"
 	"github.com/chefsgo/util"
+	//
 )
 
 func (this *Module) Register(name string, value Any, override bool) {
