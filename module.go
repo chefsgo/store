@@ -1,8 +1,9 @@
 package store
 
 import (
-	"errors"
+	"path"
 	"sync"
+	"time"
 
 	. "github.com/chefsgo/base"
 	"github.com/chefsgo/chef"
@@ -37,8 +38,12 @@ type (
 	}
 
 	Config struct {
-		Driver  string
-		Weight  int
+		Driver string
+		Weight int
+		Expiry time.Duration
+
+		Cache string
+
 		Setting Map
 	}
 	Instance struct {
@@ -48,47 +53,49 @@ type (
 	}
 )
 
-//上传文件，是不是随便选一个库，还是选第一个库
-func (this *Module) Upload(base string, path string, metadata Map) (File, Files, error) {
+func (this *Module) UploadTo(base string, path string, metadata Map) (File, Files, error) {
 	if inst, ok := this.instances[base]; ok {
 		return inst.connect.Upload(path, metadata)
 	}
-
 	return nil, nil, errInvalidStoreConnection
 }
 
-//下载文件，集成file和store
-func (this *Module) Download(file File) (string, error) {
-	if file.Store() != "" {
-		if conn, ok := this.connects[file.Store()]; ok {
-			return conn.Download(file)
-		}
-		return "", errors.New("无效存储")
-	}
-
-	//转给文件
-	return mFile.Download(file)
+func (this *Module) Upload(path string, metadata Map) (File, Files, error) {
+	//这里自动分配一个存储
+	base := this.hashring.Locate(path)
+	return this.UploadTo(base, path, metadata)
 }
 
-func (this *Module) Remove(file File) error {
-	if file.Store() != "" {
-		if conn, ok := this.connects[file.Store()]; ok {
-			return conn.Remove(file)
-		}
-		return errors.New("无效存储")
+func (this *Module) Download(code string) (File, error) {
+	file := decode(code)
+
+	if file == nil {
+		return nil, errInvalidStoreConnection
 	}
 
-	//转给文件
-	return mFile.Remove(file)
+	if inst, ok := this.instances[file.Base()]; ok {
+		filepath, err := inst.connect.Download(file)
+		if err != nil {
+			return nil, err
+		}
+
+		file.path = filepath
+		file.name = path.Base(file.path)
+
+		return file, nil
+
+	}
+	return nil, errInvalidStoreConnection
 }
 
-// func (this *Module) Read(key string) (Any, error) {
-// 	locate := this.hashring.Locate(key)
+func (this *Module) Remove(code string) error {
+	file := decode(code)
+	if file == nil {
+		return errInvalidStoreConnection
+	}
 
-// 	if inst, ok := this.instances[locate]; ok {
-// 		key := inst.config.Prefix + key //加前缀
-// 		return inst.connect.Read(key)
-// 	}
-
-// 	return nil, errInvalidStoreConnection
-// }
+	if inst, ok := this.instances[file.Base()]; ok {
+		return inst.connect.Remove(file)
+	}
+	return errInvalidStoreConnection
+}
