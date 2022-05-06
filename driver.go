@@ -1,4 +1,4 @@
-package store
+package file
 
 import (
 	. "github.com/chefsgo/base"
@@ -7,7 +7,7 @@ import (
 type (
 	// Driver
 	Driver interface {
-		Connect(name string, config Config) (Connect, error)
+		Connect(*Instance) (Connect, error)
 	}
 
 	// Health
@@ -18,7 +18,7 @@ type (
 	// Connect
 	Connect interface {
 		Open() error
-		Health() (Health, error)
+		Health() Health
 		Close() error
 
 		Upload(path string, metadata Map) (File, Files, error)
@@ -29,21 +29,3 @@ type (
 		// Preview(file File, w, h, t int64, expiries ...time.Duration) (string, error)
 	}
 )
-
-// Driver 注册驱动
-func (module *Module) Driver(name string, driver Driver, override bool) {
-	module.mutex.Lock()
-	defer module.mutex.Unlock()
-
-	if driver == nil {
-		panic("Invalid store driver: " + name)
-	}
-
-	if override {
-		module.drivers[name] = driver
-	} else {
-		if module.drivers[name] == nil {
-			module.drivers[name] = driver
-		}
-	}
-}

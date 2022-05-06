@@ -1,4 +1,4 @@
-package store
+package file
 
 import (
 	"time"
@@ -13,6 +13,12 @@ func (this *Module) Register(name string, value Any, override bool) {
 	switch config := value.(type) {
 	case Driver:
 		this.Driver(name, config, override)
+	case Config:
+		this.Config(config, override)
+	case Store:
+		this.Store(name, config, override)
+	case Stores:
+		this.Stores(config, override)
 	}
 }
 
@@ -101,17 +107,21 @@ func (this *Module) Initialize() {
 		return
 	}
 
+	if this.config.Hash == "" {
+		this.config.Hash = "sha1"
+	}
+
 	// 如果没有配置任何连接时，默认一个
-	if len(this.configs) == 0 {
-		this.configs[chef.DEFAULT] = Config{
+	if len(this.stores) == 0 {
+		this.stores[chef.DEFAULT] = Store{
 			Driver: chef.DEFAULT, Weight: 1,
 		}
 	} else {
-		for key, config := range this.configs {
+		for key, config := range this.stores {
 			if config.Weight == 0 {
 				config.Weight = 1
 			}
-			this.configs[key] = config
+			this.stores[key] = config
 		}
 
 	}
@@ -126,32 +136,38 @@ func (this *Module) Connect() {
 	//记录要参与分布的连接和权重
 	weights := make(map[string]int)
 
-	for name, config := range this.configs {
-		driver, ok := this.drivers[config.Driver]
+	for name, store := range this.stores {
+		driver, ok := this.drivers[store.Driver]
 		if ok == false {
-			panic("Invalid store driver: " + config.Driver)
+			panic("Invalid file driver: " + store.Driver)
+		}
+
+		//实例
+		inst := Instance{
+			name, this.Config, store, store.Setting, nil,
 		}
 
 		// 建立连接
-		connect, err := driver.Connect(name, config)
+		connect, err := driver.Connect(name, store)
 		if err != nil {
-			panic("Failed to connect to store: " + err.Error())
+			panic("Failed to connect to file: " + err.Error())
 		}
 
 		// 打开连接
 		err = connect.Open()
 		if err != nil {
-			panic("Failed to open store connect: " + err.Error())
+			panic("Failed to open file connect: " + err.Error())
 		}
+
+		//记住连接
+		inst.connect = connect
 
 		//保存连接
-		this.instances[name] = Instance{
-			name, config, connect,
-		}
+		this.instances[name] = inst
 
 		//只有设置了权重的才参与分布
-		if config.Weight > 0 {
-			weights[name] = config.Weight
+		if store.Weight > 0 {
+			weights[name] = store.Weight
 		}
 	}
 

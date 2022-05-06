@@ -1,2 +1,2 @@
-# store
-Chefs.go store module
+# file
+Chefs.go file module

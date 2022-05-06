@@ -1,4 +1,4 @@
-package store
+package file
 
 import (
 	"errors"
@@ -76,7 +76,7 @@ func Remove(code string) error {
 // 	if file == nil {
 // 		return errors.New("无效数据")
 // 	}
-// 	if file.store != "" {
+// 	if file.file != "" {
 // 		return mStore.Remove(file)
 // 	}
 // 	return mFile.Remove(file)

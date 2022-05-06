@@ -1,4 +1,4 @@
-package store
+package file
 
 import (
 	. "github.com/chefsgo/base"

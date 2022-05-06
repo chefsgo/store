@@ -1,17 +1,11 @@
-package store
+package file
 
 import (
-	"crypto/sha1"
-	"encoding/base64"
 	"fmt"
-	"io"
-	"os"
-	"path"
 	"strconv"
 	"strings"
 
 	"github.com/chefsgo/chef"
-	"github.com/chefsgo/util"
 )
 
 type (
@@ -21,7 +15,7 @@ type (
 		tttt string
 		size int64
 
-		path string
+		file string
 		name string
 		code string
 	}
@@ -32,7 +26,7 @@ type (
 		Type() string
 		Size() int64
 
-		Path() string
+		File() string
 		Name() string
 		Code() string
 	}
@@ -51,8 +45,8 @@ func (sf *filed) Type() string {
 func (sf *filed) Size() int64 {
 	return sf.size
 }
-func (sf *filed) Path() string {
-	return sf.path
+func (sf *filed) File() string {
+	return sf.file
 }
 func (sf *filed) Name() string {
 	return sf.name
@@ -61,20 +55,20 @@ func (sf *filed) Code() string {
 	return sf.code
 }
 
-func NewFile(base, hash, filepath string, size int64) File {
-	file := &filed{}
+// func NewFile(base, hash, filepath string, size int64) File {
+// 	file := &filed{}
 
-	file.base = base
-	file.hash = hash
-	file.path = filepath
-	file.name = path.Base(file.path)
-	file.tttt = util.Extension(file.name)
-	file.size = size
+// 	file.base = base
+// 	file.hash = hash
+// 	file.path = filepath
+// 	file.name = path.Base(file.path)
+// 	file.tttt = util.Extension(file.name)
+// 	file.size = size
 
-	file.code = encode(file)
+// 	file.code = encode(file)
 
-	return file
-}
+// 	return file
+// }
 
 // func  StatFile(file string) (Map, error) {
 // 	stat, err := os.Stat(file)
@@ -131,19 +125,4 @@ func decode(code string) *filed {
 	}
 
 	return info
-}
-
-func Hash(file string) string {
-	if f, e := os.Open(file); e == nil {
-		defer f.Close()
-
-		h := sha1.New()
-		if _, e := io.Copy(h, f); e == nil {
-
-			return base64.URLEncoding.EncodeToString(h.Sum(nil))
-
-			// return fmt.Sprintf("%x", h.Sum(nil))
-		}
-	}
-	return ""
 }

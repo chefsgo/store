@@ -1,4 +1,4 @@
-package store
+package file
 
 import "errors"
 
@@ -7,5 +7,5 @@ const (
 )
 
 var (
-	errInvalidStoreConnection = errors.New("Invalid store connection.")
+	errInvalidStoreConnection = errors.New("Invalid file connection.")
 )
