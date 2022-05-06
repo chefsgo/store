@@ -1,8 +1,6 @@
-package file
+package store
 
 import (
-	"time"
-
 	. "github.com/chefsgo/base"
 	"github.com/chefsgo/chef"
 	"github.com/chefsgo/util"
@@ -14,17 +12,15 @@ func (this *Module) Register(name string, value Any, override bool) {
 	case Driver:
 		this.Driver(name, config, override)
 	case Config:
-		this.Config(config, override)
-	case Store:
-		this.Store(name, config, override)
-	case Stores:
-		this.Stores(config, override)
+		this.Config(name, config, override)
+	case Configs:
+		this.Configs(config, override)
 	}
 }
 
 func (this *Module) configure(name string, config Map) {
 	cfg := Config{
-		Driver: chef.DEFAULT, Weight: 1, Expiry: time.Hour * 24,
+		Driver: chef.DEFAULT, Weight: 1,
 	}
 	//如果已经存在了，用现成的改写
 	if vv, ok := this.configs[name]; ok {
@@ -44,20 +40,6 @@ func (this *Module) configure(name string, config Map) {
 	}
 	if weight, ok := config["weight"].(float64); ok {
 		cfg.Weight = int(weight)
-	}
-
-	//默认过期时间，单位秒
-	if expiry, ok := config["expiry"].(string); ok {
-		dur, err := util.ParseDuration(expiry)
-		if err == nil {
-			cfg.Expiry = dur
-		}
-	}
-	if expiry, ok := config["expiry"].(int); ok {
-		cfg.Expiry = time.Second * time.Duration(expiry)
-	}
-	if expiry, ok := config["expiry"].(float64); ok {
-		cfg.Expiry = time.Second * time.Duration(expiry)
 	}
 
 	if setting, ok := config["setting"].(Map); ok {
@@ -107,21 +89,17 @@ func (this *Module) Initialize() {
 		return
 	}
 
-	if this.config.Hash == "" {
-		this.config.Hash = "sha1"
-	}
-
 	// 如果没有配置任何连接时，默认一个
-	if len(this.stores) == 0 {
-		this.stores[chef.DEFAULT] = Store{
+	if len(this.configs) == 0 {
+		this.configs[chef.DEFAULT] = Config{
 			Driver: chef.DEFAULT, Weight: 1,
 		}
 	} else {
-		for key, config := range this.stores {
+		for key, config := range this.configs {
 			if config.Weight == 0 {
 				config.Weight = 1
 			}
-			this.stores[key] = config
+			this.configs[key] = config
 		}
 
 	}
@@ -136,19 +114,19 @@ func (this *Module) Connect() {
 	//记录要参与分布的连接和权重
 	weights := make(map[string]int)
 
-	for name, store := range this.stores {
-		driver, ok := this.drivers[store.Driver]
+	for name, config := range this.configs {
+		driver, ok := this.drivers[config.Driver]
 		if ok == false {
-			panic("Invalid file driver: " + store.Driver)
+			panic("Invalid file driver: " + config.Driver)
 		}
 
 		//实例
 		inst := Instance{
-			name, this.Config, store, store.Setting, nil,
+			name, config, config.Setting, nil,
 		}
 
 		// 建立连接
-		connect, err := driver.Connect(name, store)
+		connect, err := driver.Connect(inst)
 		if err != nil {
 			panic("Failed to connect to file: " + err.Error())
 		}
@@ -166,8 +144,8 @@ func (this *Module) Connect() {
 		this.instances[name] = inst
 
 		//只有设置了权重的才参与分布
-		if store.Weight > 0 {
-			weights[name] = store.Weight
+		if config.Weight > 0 {
+			weights[name] = config.Weight
 		}
 	}
 

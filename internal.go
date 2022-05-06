@@ -1,4 +1,4 @@
-package file
+package store
 
 import (
 	"path"
@@ -20,35 +20,35 @@ func (this *Module) Upload(path string, metadata Map) (File, Files, error) {
 }
 
 func (this *Module) Download(code string) (File, error) {
-	file := decode(code)
+	info := decode(code)
 
-	if file == nil {
+	if info == nil {
 		return nil, errInvalidStoreConnection
 	}
 
-	if inst, ok := this.instances[file.Base()]; ok {
-		filepath, err := inst.connect.Download(file)
+	if inst, ok := this.instances[info.Base()]; ok {
+		file, err := inst.connect.Download(info)
 		if err != nil {
 			return nil, err
 		}
 
-		file.path = filepath
-		file.name = path.Base(file.path)
+		info.file = file
+		info.name = path.Base(info.file)
 
-		return file, nil
+		return info, nil
 
 	}
 	return nil, errInvalidStoreConnection
 }
 
 func (this *Module) Remove(code string) error {
-	file := decode(code)
-	if file == nil {
+	info := decode(code)
+	if info == nil {
 		return errInvalidStoreConnection
 	}
 
-	if inst, ok := this.instances[file.Base()]; ok {
-		return inst.connect.Remove(file)
+	if inst, ok := this.instances[info.Base()]; ok {
+		return inst.connect.Remove(info)
 	}
 	return errInvalidStoreConnection
 }

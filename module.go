@@ -1,4 +1,4 @@
-package file
+package store
 
 import (
 	"sync"
@@ -14,8 +14,7 @@ func init() {
 
 var (
 	module = &Module{
-		Config:    Config{},
-		stores:    make(Stores, 0),
+		configs:   make(Configs, 0),
 		drivers:   make(map[string]Driver, 0),
 		instances: make(map[string]Instance, 0),
 	}
@@ -27,9 +26,7 @@ type (
 
 		connected, initialized, launched bool
 
-		config Config
-		stores Stores
-
+		configs Configs
 		drivers map[string]Driver
 
 		instances map[string]Instance
@@ -38,12 +35,8 @@ type (
 		hashring *util.HashRing
 	}
 
-	Config struct {
-		Hash string
-	}
-
-	Stores map[string]Store
-	Store  struct {
+	Configs map[string]Config
+	Config  struct {
 		Driver  string
 		Weight  int
 		Setting Map
@@ -54,10 +47,6 @@ func (module *Module) Driver(name string, driver Driver, override bool) {
 	module.mutex.Lock()
 	defer module.mutex.Unlock()
 
-	if driver == nil {
-		panic("Invalid file driver: " + name)
-	}
-
 	if override {
 		module.drivers[name] = driver
 	} else {
@@ -67,27 +56,24 @@ func (module *Module) Driver(name string, driver Driver, override bool) {
 	}
 }
 
-func (this *Module) Config(config Config, override bool) {
+func (this *Module) Config(name string, config Config, override bool) {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 
-	this.config = config
-}
-
-func (this *Module) Store(name string, config Store, override bool) {
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
+	if name == "" {
+		name = chef.DEFAULT
+	}
 
 	if override {
-		this.stores[name] = config
+		this.configs[name] = config
 	} else {
-		if _, ok := this.stores[name]; ok == false {
-			this.stores[name] = config
+		if _, ok := this.configs[name]; ok == false {
+			this.configs[name] = config
 		}
 	}
 }
-func (this *Module) Stores(config Stores, override bool) {
+func (this *Module) Configs(config Configs, override bool) {
 	for key, val := range config {
-		this.Store(key, val, override)
+		this.Config(key, val, override)
 	}
 }

@@ -1,4 +1,4 @@
-package file
+package store
 
 import (
 	"crypto/sha1"
@@ -7,15 +7,14 @@ import (
 	"os"
 	"path"
 
-	"54hub.com/argo/util"
 	. "github.com/chefsgo/base"
+	"github.com/chefsgo/util"
 )
 
 type (
 	Instance struct {
 		Name    string
 		Config  Config
-		Store   Store
 		Setting Map
 
 		connect Connect
@@ -46,5 +45,5 @@ func (this *Instance) File(hash string, file string, size int64) File {
 
 	info.code = encode(info)
 
-	return file
+	return info
 }

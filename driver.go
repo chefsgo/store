@@ -1,4 +1,4 @@
-package file
+package store
 
 import (
 	. "github.com/chefsgo/base"
@@ -7,7 +7,7 @@ import (
 type (
 	// Driver
 	Driver interface {
-		Connect(*Instance) (Connect, error)
+		Connect(Instance) (Connect, error)
 	}
 
 	// Health
