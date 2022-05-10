@@ -8,4 +8,5 @@ const (
 
 var (
 	errInvalidStoreConnection = errors.New("Invalid file connection.")
+	//
 )
