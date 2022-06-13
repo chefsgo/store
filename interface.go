@@ -106,7 +106,7 @@ func (this *Module) Connect() {
 	for name, config := range this.configs {
 		driver, ok := this.drivers[config.Driver]
 		if ok == false {
-			panic("Invalid file driver: " + config.Driver)
+			panic("Invalid store driver: " + config.Driver)
 		}
 
 		//实例

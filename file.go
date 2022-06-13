@@ -1,11 +1,16 @@
 package store
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
+	. "github.com/chefsgo/base"
+
 	"github.com/chefsgo/chef"
+	"github.com/chefsgo/util"
 )
 
 type (
@@ -70,30 +75,30 @@ func (sf *filed) Code() string {
 // 	return file
 // }
 
-// func  StatFile(file string) (Map, error) {
-// 	stat, err := os.Stat(file)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+func StatFile(file string) (Map, error) {
+	stat, err := os.Stat(file)
+	if err != nil {
+		return nil, err
+	}
 
-// 	hash := util.Sha1File(file)
-// 	if hash == "" {
-// 		return nil, errors.New("hash error")
-// 	}
-// 	filename := stat.Name()
-// 	extension := util.Extension(file)
-// 	mimetype := chef.Mimetype(extension)
-// 	length := stat.Size()
+	hash := util.Sha1File(file)
+	if hash == "" {
+		return nil, errors.New("hash error")
+	}
+	filename := stat.Name()
+	extension := util.Extension(file)
+	mimetype := chef.Mimetype(extension)
+	length := stat.Size()
 
-// 	return Map{
-// 		"hash": hash,
-// 		"name": filename,
-// 		"type": extension,
-// 		"mime": mimetype,
-// 		"size": length,
-// 		"file": file,
-// 	}, nil
-// }
+	return Map{
+		"hash": hash,
+		"name": filename,
+		"type": extension,
+		"mime": mimetype,
+		"size": length,
+		"file": file,
+	}, nil
+}
 
 //文件编解码
 //fileConfig可以设置加解密方式
